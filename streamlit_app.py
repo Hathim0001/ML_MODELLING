@@ -1,63 +1,39 @@
- # In this program we will apply various ML algorithms to the built in datasets in scikit-learn and some datasets from kaggle
-
-# Importing required Libraries
-# Importing Numpy
 import numpy as np
 
-# To read csv file
 import pandas as pd
 
-# Importing datasets from sklearn
 from sklearn import datasets
 
-# For splitting between training and testing
 from sklearn.model_selection import train_test_split
 
-# Importing Algorithm for Simple Vector Machine
 from sklearn.svm import SVC, SVR
 
-# Importing Knn algorithm
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 
-# Importing  Decision Tree algorithm
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
-# Importing Random Forest Classifer
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
-# Importing Naive Bayes algorithm
 from sklearn.naive_bayes import GaussianNB
 
-# Importing Linear and Logistic Regression
 from sklearn.linear_model import LinearRegression, LogisticRegression
 
-# Importing accuracy score and mean_squared_error
 from sklearn.metrics import mean_squared_error, accuracy_score, mean_absolute_error
 
-# Importing PCA for dimension reduction
 from sklearn.decomposition import PCA
 
-# For Plotting
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# For model deployment
 import streamlit as st
 
-# Importing Label Encoder
-# For converting string to int
 from sklearn.preprocessing import LabelEncoder
 
-# To Disable Warnings
 st.set_option("deprecation.showPyplotGlobalUse", False)
 import warnings
 
 warnings.filterwarnings("ignore")
 
-
-# Now we need to load the builtin dataset
-# For the other dataset we will read the csv file from the dataset folder
-# This is done using the load_dataset_name function
 def load_dataset(Data):
 
     if Data == "Iris":
@@ -81,9 +57,6 @@ def load_dataset(Data):
     else:
         return pd.read_csv("Dataset/car_evaluation.csv")
 
-
-# Now after this we need to split between input and output
-# Defining Function for Input and Output
 def Input_output(data, data_name):
 
     if data_name == "Salary":
@@ -110,10 +83,8 @@ def Input_output(data, data_name):
 
         df = data
 
-        # For converting string columns to numeric values
         le = LabelEncoder()
 
-        # Function to convert string values to numeric values
         func = lambda i: le.fit(df[i]).transform(df[i])
         for i in df.columns:
             df[i] = func(i)
@@ -121,105 +92,66 @@ def Input_output(data, data_name):
         X, Y = df.drop(["unacc"], axis=1), df["unacc"]
 
     else:
-        # We use data.data as we need to copy data to X which is Input
         X = data.data
-        # Since this is built in dataset we can directly load output or target class by using data.target function
         Y = data.target
 
     return X, Y
 
-
-# Adding Parameters so that we can select from various parameters for classifier
 def add_parameter_classifier_general(algorithm):
 
-    # Declaring a dictionary for storing parameters
     params = dict()
 
-    # Deciding parameters based on algorithm
-
-    # Adding paramters for SVM
     if algorithm == "SVM":
 
-        # Adding regularization parameter from range 0.01 to 10.0
         c_regular = st.sidebar.slider("C (Regularization)", 0.01, 10.0)
-        # Kernel is the arguments in the ML model
-        # Polynomial ,Linear, Sigmoid and Radial Basis Function are types of kernals which we can add
         kernel_custom = st.sidebar.selectbox(
             "Kernel", ("linear", "poly ", "rbf", "sigmoid")
         )
-        # Adding in dictionary
         params["C"] = c_regular
         params["kernel"] = kernel_custom
 
-    # Adding Parameters for KNN
     elif algorithm == "KNN":
 
-        # Adding number of Neighbour in Classifier
         k_n = st.sidebar.slider("Number of Neighbors (K)", 1, 20, key="k_n_slider")
-        # Adding in dictionary
         params["K"] = k_n
-        # Adding weights
         weights_custom = st.sidebar.selectbox("Weights", ("uniform", "distance"))
-        # Adding to dictionary
         params["weights"] = weights_custom
 
-    # Adding Parameters for Naive Bayes
-    # It doesn't have any paramter
     elif algorithm == "Naive Bayes":
         st.sidebar.info(
             "This is a simple Algorithm. It doesn't have Parameters for Hyper-tuning."
         )
 
-    # Adding Parameters for Decision Tree
     elif algorithm == "Decision Tree":
 
-        # Taking max_depth
         max_depth = st.sidebar.slider("Max Depth", 2, 17)
-        # Adding criterion
-        # mse is for regression- It is used in DecisionTreeRegressor
-        # mse will give error in classifier so it is removed
         criterion = st.sidebar.selectbox("Criterion", ("gini", "entropy"))
-        # Adding splitter
         splitter = st.sidebar.selectbox("Splitter", ("best", "random"))
-        # Taking random state
-        # Adding to dictionary
         params["max_depth"] = max_depth
         params["criterion"] = criterion
         params["splitter"] = splitter
 
-        # Exception Handling using try except block
-        # Because we are sending this input in algorithm model it will show error before any input is entered
-        # For this we will do a default random state till the user enters any state and after that it will be updated
         try:
             random = st.sidebar.text_input("Enter Random State")
             params["random_state"] = int(random)
         except:
             params["random_state"] = 4567
 
-    # Adding Parameters for Random Forest
     elif algorithm == "Random Forest":
 
-        # Taking max_depth
         max_depth = st.sidebar.slider("Max Depth", 2, 17)
-        # Adding number of estimators
         n_estimators = st.sidebar.slider("Number of Estimators", 1, 90)
-        # Adding criterion
-        # mse is for regression- It is used in RandomForestRegressor
-        # mse will give error in classifier so it is removed
         criterion = st.sidebar.selectbox("Criterion", ("gini", "entropy", "log_loss"))
-        # Adding to dictionary
         params["max_depth"] = max_depth
         params["n_estimators"] = n_estimators
         params["criterion"] = criterion
 
-        # Exception Handling using try except block
-        # Because we are sending this input in algorithm model it will show error before any input is entered
-        # For this we will do a default random state till the user enters any state and after that it will be updated
         try:
             random = st.sidebar.text_input("Enter Random State")
             params["random_state"] = int(random)
         except:
             params["random_state"] = 4567
+
 
     # Adding Parameters for Logistic Regression
     else:
@@ -240,71 +172,35 @@ def add_parameter_classifier_general(algorithm):
     return params
 
 
-# Adding Parameters so that we can select from various parameters for regressor
 def add_parameter_regressor(algorithm):
-
-    # Declaring a dictionary for storing parameters
     params = dict()
 
-    # Deciding parameters based on algorithm
-    # Adding Parameters for Decision Tree
     if algorithm == "Decision Tree":
-
-        # Taking max_depth
         max_depth = st.sidebar.slider("Max Depth", 2, 17)
-        # Adding criterion
-        # mse is for regression- It is used in DecisionTreeRegressor
-        criterion = st.sidebar.selectbox(
-            "Criterion", ("absolute_error", "squared_error", "poisson", "friedman_mse")
-        )
-        # Adding splitter
+        criterion = st.sidebar.selectbox("Criterion", ("absolute_error", "squared_error", "poisson", "friedman_mse"))
         splitter = st.sidebar.selectbox("Splitter", ("best", "random"))
-        # Taking random state
-        # Adding to dictionary
         params["max_depth"] = max_depth
         params["criterion"] = criterion
         params["splitter"] = splitter
-
-        # Exception Handling using try except block
-        # Because we are sending this input in algorithm model it will show error before any input is entered
-        # For this we will do a default random state till the user enters any state and after that it will be updated
         try:
             random = st.sidebar.text_input("Enter Random State")
             params["random_state"] = int(random)
         except:
             params["random_state"] = 4567
 
-    # Adding Parameters for Linear Regression
     elif algorithm == "Linear Regression":
-
-        # Taking fit_intercept
         fit_intercept = st.sidebar.selectbox("Fit Intercept", ("True", "False"))
         params["fit_intercept"] = bool(fit_intercept)
-        # Normalize does not work in linear regression
-        # Taking n_jobs
         n_jobs = st.sidebar.selectbox("Number of Jobs", (None, -1))
         params["n_jobs"] = n_jobs
 
-    # Adding Parameters for Random Forest
     else:
-
-        # Taking max_depth
         max_depth = st.sidebar.slider("Max Depth", 2, 17)
-        # Adding number of estimators
         n_estimators = st.sidebar.slider("Number of Estimators", 1, 90)
-        # Adding criterion
-        # mse is for regression- It is used in RandomForestRegressor
-        criterion = st.sidebar.selectbox(
-            "Criterion", ("absolute_error", "squared_error", "poisson", "friedman_mse")
-        )
-        # Adding to dictionary
+        criterion = st.sidebar.selectbox("Criterion", ("absolute_error", "squared_error", "poisson", "friedman_mse"))
         params["max_depth"] = max_depth
         params["n_estimators"] = n_estimators
         params["criterion"] = criterion
-
-        # Exception Handling using try except block
-        # Because we are sending this input in algorithm model it will show error before any input is entered
-        # For this we will do a default random state till the user enters any state and after that it will be updated
         try:
             random = st.sidebar.text_input("Enter Random State")
             params["random_state"] = int(random)
@@ -313,177 +209,60 @@ def add_parameter_regressor(algorithm):
 
     return params
 
-
-# Now we will build ML Model for this dataset and calculate accuracy for that for classifier
 def model_classifier(algorithm, params):
-
     if algorithm == "KNN":
         return KNeighborsClassifier(n_neighbors=params["K"], weights=params["weights"])
-
     elif algorithm == "SVM":
         return SVC(C=params["C"], kernel=params["kernel"])
-
     elif algorithm == "Decision Tree":
-        return DecisionTreeClassifier(
-            criterion=params["criterion"],
-            splitter=params["splitter"],
-            random_state=params["random_state"],
-        )
-
+        return DecisionTreeClassifier(criterion=params["criterion"], splitter=params["splitter"], random_state=params["random_state"])
     elif algorithm == "Naive Bayes":
         return GaussianNB()
-
     elif algorithm == "Random Forest":
-        return RandomForestClassifier(
-            n_estimators=params["n_estimators"],
-            max_depth=params["max_depth"],
-            criterion=params["criterion"],
-            random_state=params["random_state"],
-        )
-
+        return RandomForestClassifier(n_estimators=params["n_estimators"], max_depth=params["max_depth"], criterion=params["criterion"], random_state=params["random_state"])
     elif algorithm == "Linear Regression":
-        return LinearRegression(
-            fit_intercept=params["fit_intercept"], n_jobs=params["n_jobs"]
-        )
-
+        return LinearRegression(fit_intercept=params["fit_intercept"], n_jobs=params["n_jobs"])
     else:
-        return LogisticRegression(
-            fit_intercept=params["fit_intercept"],
-            penalty=params["penalty"],
-            C=params["C"],
-            n_jobs=params["n_jobs"],
-        )
+        return LogisticRegression(fit_intercept=params["fit_intercept"], penalty=params["penalty"], C=params["C"], n_jobs=params["n_jobs"])
 
-
-# Now we will build ML Model for this dataset and calculate accuracy for that for regressor
 def model_regressor(algorithm, params):
-
     if algorithm == "KNN":
         return KNeighborsRegressor(n_neighbors=params["K"], weights=params["weights"])
-
     elif algorithm == "SVM":
         return SVR(C=params["C"], kernel=params["kernel"])
-
     elif algorithm == "Decision Tree":
-        return DecisionTreeRegressor(
-            criterion=params["criterion"],
-            splitter=params["splitter"],
-            random_state=params["random_state"],
-        )
-
+        return DecisionTreeRegressor(criterion=params["criterion"], splitter=params["splitter"], random_state=params["random_state"])
     elif algorithm == "Random Forest":
-        return RandomForestRegressor(
-            n_estimators=params["n_estimators"],
-            max_depth=params["max_depth"],
-            criterion=params["criterion"],
-            random_state=params["random_state"],
-        )
-
+        return RandomForestRegressor(n_estimators=params["n_estimators"], max_depth=params["max_depth"], criterion=params["criterion"], random_state=params["random_state"])
     else:
-        return LinearRegression(
-            fit_intercept=params["fit_intercept"], n_jobs=params["n_jobs"]
-        )
+        return LinearRegression(fit_intercept=params["fit_intercept"], n_jobs=params["n_jobs"])
 
-
-# Now we will write the dataset information
-# Since diabetes is a regression dataset, it does not have classes
 def info(data_name, algorithm, algorithm_type, data, X, Y):
+    datasets_info = {
+        "Diabetes": "Regression",
+        "Salary": "Regression",
+        "Naive Bayes Classification": "Classification",
+        "Car Evaluation": "Classification",
+        "Heart Disease Classification": "Classification",
+        "Titanic": "Classification",
+    }
 
-    if data_name not in [
-        "Diabetes",
-        "Salary",
-        "Naive Bayes Classification",
-        "Car Evaluation",
-        "Heart Disease Classification",
-        "Titanic",
-    ]:
-        st.write(f"## Classification {data_name} Dataset")
-        st.write(f'Algorithm is : {algorithm + " " + algorithm_type}')
+    target_names_mapping = {
+        "Naive Bayes Classification": ["Not Diabetic", "Diabetic"],
+        "Heart Disease Classification": ["Less Chance Of Heart Attack", "High Chance Of Heart Attack"],
+    }
 
-        # Printing shape of data
-        st.write("Shape of Dataset is: ", X.shape)
-        st.write("Number of classes: ", len(np.unique(Y)))
-        # Making a dataframe to store target name and value
+    st.write(f"## {datasets_info.get(data_name, 'Classification')} {data_name} Dataset")
+    st.write(f"Algorithm is: {algorithm} {algorithm_type}")
+    st.write("Shape of Dataset is:", X.shape)
 
-        df = pd.DataFrame(
-            {"Target Value": list(np.unique(Y)), "Target Name": data.target_names}
-        )
-        # Display the DataFrame without index labels
+    if datasets_info.get(data_name) == "Classification":
+        st.write("Number of classes:", len(np.unique(Y)))
+        target_names = target_names_mapping.get(data_name, data.target_names if hasattr(data, 'target_names') else [])
+        df = pd.DataFrame({"Target Value": list(np.unique(Y)), "Target Name": target_names})
         st.write("Values and Name of Classes")
-
-        # Display the DataFrame as a Markdown table
-        # To successfully run this we need to install tabulate
         st.markdown(df.to_markdown(index=False), unsafe_allow_html=True)
-        st.write("\n")
 
-    elif data_name == "Diabetes":
-
-        st.write(f"## Regression {data_name} Dataset")
-        st.write(f'Algorithm is : {algorithm + " " + algorithm_type}')
-
-        # Printing shape of data
-        st.write("Shape of Dataset is: ", X.shape)
-
-    elif data_name == "Salary":
-
-        st.write(f"## Regression {data_name} Dataset")
-        st.write(f'Algorithm is : {algorithm + " " + algorithm_type}')
-
-        # Printing shape of data
-        st.write("Shape of Dataset is: ", X.shape)
-
-    elif data_name == "Naive Bayes Classification":
-
-        st.write(f"## Classification {data_name} Dataset")
-        st.write(f'Algorithm is : {algorithm + " " + algorithm_type}')
-
-        # Printing shape of data
-        st.write("Shape of Dataset is: ", X.shape)
-        st.write("Number of classes: ", len(np.unique(Y)))
-        # Making a dataframe to store target name and value
-
-        df = pd.DataFrame(
-            {
-                "Target Value": list(np.unique(Y)),
-                "Target Name": ["Not Diabetic", "Diabetic"],
-            }
-        )
-
-        # Display the DataFrame without index labels
-        st.write("Values and Name of Classes")
-
-        # Display the DataFrame as a Markdown table
-        # To successfully run this we need to install tabulate
-        st.markdown(df.to_markdown(index=False), unsafe_allow_html=True)
-        st.write("\n")
-
-    elif data_name == "Heart Disease Classification":
-
-        st.write(f"## Classification {data_name} Dataset")
-        st.write(f'Algorithm is : {algorithm + " " + algorithm_type}')
-
-        # Printing shape of data
-        st.write("Shape of Dataset is: ", X.shape)
-        st.write("Number of classes: ", len(np.unique(Y)))
-        # Making a dataframe to store target name and value
-
-        df = pd.DataFrame(
-            {
-                "Target Value": list(np.unique(Y)),
-                "Target Name": [
-                    "Less Chance Of Heart Attack",
-                    "High Chance Of Heart Attack",
-                ],
-            }
-        )
-
-        # Display the DataFrame without index labels
-        st.write("Values and Name of Classes")
-
-        # Display the DataFrame as a Markdown table
-        # To successfully run this we need to install tabulate
-        st.markdown(df.to_markdown(index=False), unsafe_allow_html=True)
-        st.write("\n")
 
     elif data_name == "Titanic":
 
@@ -532,36 +311,22 @@ def info(data_name, algorithm, algorithm_type, data, X, Y):
             }
         )
 
-        # Display the DataFrame without index labels
+       
         st.write("Values and Name of Classes")
 
-        # Display the DataFrame as a Markdown table
-        # To successfully run this we need to install tabulate
         st.markdown(df.to_markdown(index=False), unsafe_allow_html=True)
         st.write("\n")
 
 
-# Now while plotting we have to show target variables for datasets
-# Now since diabetes is regression dataset it dosen't have target variables
-# So we have to apply condition and plot the graph according to the dataset
-# Seaborn is used as matplotlib does not display all label names
-
-
 def choice_classifier(data, data_name, X, Y):
 
-    # Plotting Regression Plot for dataset diabetes
-    # Since this is a regression dataset we show regression line as well
+
     if data_name == "Diabetes":
         plt.scatter(X[:, 0], X[:, 1], c=Y, cmap="viridis", alpha=0.8)
         plt.title("Scatter Classification Plot of Dataset")
         plt.colorbar()
 
-    # Plotting for digits
-    # Since this dataset has many classes/target values we can plot it using seaborn
-    # Also viridis will be ignored here and it will plot by default according to its own settings
-    # But we can set Color palette according to our requirements
-    # We need not to give data argument else it gives error
-    # Hue paramter is given to show target variables
+
     elif data_name == "Digits":
         colors = [
             "purple",
@@ -620,11 +385,7 @@ def choice_classifier(data, data_name, X, Y):
         plt.title("Scatter Classification Plot of Dataset With Target Classes")
 
 
-# Now while plotting we have to show original value for datasets
-# Now since diabetes is regression dataset it dosen't have target variables
-# So we have to apply condition and plot the graph according to the dataset
-# Seaborn is used as matplotlib does not display all label names
-# We show the regression line and the original variables
+
 def choice_regressor(X, x_test, predict, data, data_name, Y, fig):
 
     # Plotting Regression Plot for dataset diabetes
@@ -636,12 +397,6 @@ def choice_regressor(X, x_test, predict, data, data_name, Y, fig):
         plt.legend(["Actual Values", "Best Line or General formula"])
         plt.colorbar()
 
-    # Plotting for digits
-    # Since this dataset has many classes/target values we can plot it using seaborn
-    # Also viridis will be ignored here and it will plot by default according to its own settings
-    # But we can set Color palette according to our requirements
-    # We need not to give data argument else it gives error
-    # Hue paramter is given to show target variables
     elif data_name == "Digits":
         colors = [
             "purple",
@@ -689,16 +444,12 @@ def choice_regressor(X, x_test, predict, data, data_name, Y, fig):
     return fig
 
 
-# This prints the information about the dataset
-# It also builds the model according to the dataset being classification or regression dataset
 def data_model_description(algorithm, algorithm_type, data_name, data, X, Y):
 
     # Calling function to print Dataset Information
     info(data_name, algorithm, algorithm_type, data, X, Y)
 
-    # Calling Function based on regressor and classifier
-    # Here since the parameters for regressor and classifier are same for some algorithm we can directly use this
-    # Because of this here except for this three algorithm we do not need to take parameters separately
+    
     if (algorithm_type == "Regressor") and (
         algorithm == "Decision Tree"
         or algorithm == "Random Forest"
@@ -715,8 +466,7 @@ def data_model_description(algorithm, algorithm_type, data_name, data, X, Y):
     else:
         algo_model = model_classifier(algorithm, params)
 
-    # Now splitting into Testing and Training data
-    # It will split into 80 % training data and 20 % Testing data
+   
     x_train, x_test, y_train, y_test = train_test_split(X, Y, train_size=0.8)
 
     # Training algorithm
@@ -801,8 +551,6 @@ def main():
         ),
     )
 
-    # The Next is selecting algorithm
-    # We will display this in the sidebar
     algorithm = st.sidebar.selectbox(
         "Select Supervised Learning Algorithm",
         (
@@ -873,10 +621,7 @@ def display_background_image(url, opacity):
 # Starting Execution of the Program
 if __name__ == "__main__":
 
-    # Setting the page title
-    # This title will only be visible when running the app locally.
-    # In the deployed app, the title will be displayed as "Title - Streamlit," where "Title" is the one we provide.
-    # If we don't set the title, it will default to "Streamlit"
+
     st.set_page_config(page_title="HyperTuneML Platform")
 
     # Call function to display the background image with opacity
